@@ -153,7 +153,9 @@ export class HUD {
     e['thrust']!.textContent = `${s.totalThrust.toFixed(1)} N`;
     e['mode']!.textContent = this.sim.mode.toUpperCase();
     const wp = nav.current;
-    e['wp']!.textContent = wp ? `${nav.progress} ${wp.name}` : '—';
+    e['wp']!.textContent = nav.done
+      ? 'MISSION COMPLETE'
+      : wp ? `${nav.progress} ${wp.name}` : '—';
     e['dist']!.textContent = `${nav.distanceTo(s.position.x, s.position.y, s.position.z).toFixed(1)} m`;
     e['state']!.textContent = this.sim.running
       ? this.sim.landed ? 'LANDED' : 'FLYING'
@@ -166,9 +168,9 @@ export class HUD {
       f.style.width = `${Math.min(100, (w / MOTOR_OMEGA_MAX) * 100).toFixed(0)}%`;
     }
 
-    let hdgDeg = s.euler.yaw * RAD2DEG;
-    hdgDeg = ((hdgDeg % 360) + 360) % 360;
-    e['hdg']!.textContent = `${hdgDeg.toFixed(0).padStart(3, '0')}°`;
+    // round first, then wrap so 359.6° displays as 0° rather than "360°"
+    const hdgDeg = ((Math.round(s.euler.yaw * RAD2DEG) % 360) + 360) % 360;
+    e['hdg']!.textContent = `${String(hdgDeg).padStart(3, '0')}°`;
 
     this.drawHorizon(s.euler.roll, s.euler.pitch);
   }

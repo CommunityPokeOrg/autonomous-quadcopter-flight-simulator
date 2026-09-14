@@ -41,6 +41,14 @@ export class FlightController {
     if (this.mode === 'autonomous') {
       this.navigator.update(s.position.x, s.position.y, s.position.z, dt);
       const wp = this.navigator.current;
+      const landed = s.position.z < 0.1 && s.velocity.length() < 0.5;
+      if ((this.navigator.done || !wp) && landed) {
+        // mission complete: motors off, controllers idle until reset
+        model.setMotorCommands([0, 0, 0, 0]);
+        this.attitude.reset();
+        this.position.reset();
+        return;
+      }
       if (wp) {
         const demand = this.position.update(
           { x: wp.x, y: wp.y, z: wp.z },
