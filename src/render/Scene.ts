@@ -21,6 +21,10 @@ export class Renderer3D {
   private shadowRing: THREE.Mesh;
   chaseCam = false;
   private sim: Simulation;
+  // Chase cam mount: fixed body-frame offset behind the drone and a fixed
+  // body-frame aim point ahead of it — the camera is bolted to the quad.
+  private chaseMount = new THREE.Vector3(-2.2, 0, 1.0);
+  private chaseAim = new THREE.Vector3(3.5, 0, 0.4);
 
   constructor(canvas: HTMLCanvasElement, sim: Simulation) {
     this.sim = sim;
@@ -233,24 +237,29 @@ export class Renderer3D {
     this.updateWaypointVisuals(elapsed);
 
     if (this.chaseCam) {
-      const back = new THREE.Vector3(-2.2, 0, 1.0).applyQuaternion(this.drone.quaternion);
-      const target = this.drone.position.clone().add(back);
-      this.camera.position.lerp(target, 0.12);
-      this.controls.target.lerp(this.drone.position, 0.2);
+      const mount = this.chaseMount.clone().applyQuaternion(this.drone.quaternion).add(this.drone.position);
+      const aim = this.chaseAim.clone().applyQuaternion(this.drone.quaternion).add(this.drone.position);
+      this.camera.up.set(0, 0, 1).applyQuaternion(this.drone.quaternion);
+      this.camera.position.copy(mount);
+      this.camera.lookAt(aim);
+      this.controls.target.copy(this.drone.position);
     } else {
       // keep orbit target drifting gently toward drone so it stays in view
+      this.camera.up.set(0, 0, 1);
       this.controls.target.lerp(
         new THREE.Vector3(st.position.x, st.position.y, Math.max(1, st.position.z)),
         0.02,
       );
+      this.controls.update();
     }
-    this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
 
   setChase(on: boolean): void {
     this.chaseCam = on;
+    this.controls.enabled = !on;
     if (!on) {
+      this.camera.up.set(0, 0, 1);
       this.camera.position.set(7, -9, 6);
     }
   }
