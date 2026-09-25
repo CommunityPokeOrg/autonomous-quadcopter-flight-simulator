@@ -1,6 +1,7 @@
 import { Simulation } from './sim/Simulation';
 import { Renderer3D } from './render/Scene';
 import { HUD } from './ui/HUD';
+import { TouchControls } from './ui/TouchControls';
 
 const PHYS_DT = 1 / 240;
 const MAX_FRAME_DT = 0.1;
@@ -16,16 +17,28 @@ renderer.syncWaypoints();
 const keys = new Set<string>();
 window.addEventListener('keydown', (e) => keys.add(e.code));
 window.addEventListener('keyup', (e) => keys.delete(e.code));
-window.addEventListener('blur', () => keys.clear());
+window.addEventListener('blur', () => {
+  keys.clear();
+  sim.manualInput = { pitch: 0, roll: 0, yawRate: 0, throttle: 0 };
+});
+
+const touchControls = TouchControls.isTouchDevice() ? new TouchControls(hudRoot) : null;
+
+const clamp1 = (v: number): number => Math.max(-1, Math.min(1, v));
 
 function pollManualInput(): void {
   const k = keys;
-  sim.manualInput.pitch = (k.has('KeyW') ? 1 : 0) - (k.has('KeyS') ? 1 : 0);
-  sim.manualInput.roll = (k.has('KeyD') ? 1 : 0) - (k.has('KeyA') ? 1 : 0);
-  sim.manualInput.yawRate = (k.has('KeyQ') ? 1 : 0) - (k.has('KeyE') ? 1 : 0);
-  sim.manualInput.throttle =
+  const kbPitch = (k.has('KeyW') ? 1 : 0) - (k.has('KeyS') ? 1 : 0);
+  const kbRoll = (k.has('KeyD') ? 1 : 0) - (k.has('KeyA') ? 1 : 0);
+  const kbYaw = (k.has('KeyQ') ? 1 : 0) - (k.has('KeyE') ? 1 : 0);
+  const kbThrottle =
     (k.has('KeyR') || k.has('ShiftLeft') || k.has('ShiftRight') ? 1 : 0) -
     (k.has('KeyF') || k.has('ControlLeft') || k.has('ControlRight') ? 1 : 0);
+  const touch = touchControls?.input;
+  sim.manualInput.pitch = clamp1(kbPitch + (touch?.pitch ?? 0));
+  sim.manualInput.roll = clamp1(kbRoll + (touch?.roll ?? 0));
+  sim.manualInput.yawRate = clamp1(kbYaw + (touch?.yawRate ?? 0));
+  sim.manualInput.throttle = clamp1(kbThrottle + (touch?.throttle ?? 0));
 }
 
 const hud = new HUD(hudRoot, sim, {
@@ -68,6 +81,7 @@ function frame(now: number): void {
 
   renderer.render(dt, elapsed);
   hud.update();
+  touchControls?.update(sim.mode);
 }
 
 sim.start();

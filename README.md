@@ -26,6 +26,7 @@ and autonomous waypoint navigation — built with Three.js and cannon-es.
 | Mode | Input |
 |---|---|
 | Manual | `W`/`S` pitch, `A`/`D` roll, `Q`/`E` yaw, `R`/`F` (or `Shift`/`Ctrl`) throttle |
+| Manual (touch) | Twin virtual sticks on touch devices: left stick throttle (up/down) + yaw (left/right), right stick pitch (up/down) + roll (left/right). Both are analog and spring-return to center (centered throttle = altitude hold). |
 | Camera | Orbit: drag to rotate, scroll to zoom. Toggle Orbit/Chase in the panel. |
 | Sim | Start / Pause / Reset buttons; speed slider 0.25×–2×; Loop mission checkbox. |
 
@@ -63,7 +64,8 @@ src/
 ├── render/
 │   └── Scene.ts                  Three.js scene, drone mesh, trails, cameras
 └── ui/
-    └── HUD.ts                    telemetry/control DOM overlay + attitude indicator
+    ├── HUD.ts                    telemetry/control DOM overlay + attitude indicator
+    └── TouchControls.ts          virtual twin sticks (Pointer Events) for touch devices
 ```
 
 ### Control loop

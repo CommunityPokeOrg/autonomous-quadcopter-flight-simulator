@@ -22,6 +22,12 @@ body,
   font-size: 12px;
 }
 
+html,
+body {
+  overscroll-behavior: none; /* no pull-to-refresh while flying */
+  touch-action: manipulation; /* no double-tap zoom; canvas pinch still works */
+}
+
 #scene {
   position: absolute;
   inset: 0;
@@ -203,10 +209,95 @@ body,
   min-width: 60px;
 }
 
+/* ── touch controls (virtual twin sticks) ───────────────────────────── */
+
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stick {
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(36vmin, 170px);
+  aspect-ratio: 1;
+}
+
+.stick-left {
+  left: max(18px, env(safe-area-inset-left));
+}
+
+.stick-right {
+  right: max(18px, env(safe-area-inset-right));
+}
+
+.stick-pad {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--cyan-dim);
+  background: var(--panel-bg);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 18px rgba(26, 223, 216, 0.12), inset 0 0 24px rgba(26, 223, 216, 0.06);
+  pointer-events: auto;
+  touch-action: none; /* prevent scroll/zoom while dragging */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  margin: -21% 0 0 -21%;
+  border-radius: 50%;
+  background: rgba(26, 223, 216, 0.16);
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 12px rgba(26, 223, 216, 0.45);
+  pointer-events: none;
+}
+
+.stick-label {
+  position: absolute;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.stick-label.top {
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.stick-label.bottom {
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.stick-label.left {
+  left: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.stick-label.right {
+  right: 8%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 @media (max-width: 720px) {
   .telemetry {
     min-width: 0;
-    width: calc(100vw - 28px);
+    width: 46vw;
     top: 10px;
     left: 14px;
     padding: 8px 10px;
@@ -214,25 +305,30 @@ body,
   .telemetry .row:nth-child(n + 7) {
     display: none;
   }
+  .motors {
+    margin-top: 6px;
+  }
   .controls {
-    top: auto;
-    bottom: 10px;
+    top: 10px;
     right: 14px;
     min-width: 0;
-    width: 180px;
+    width: 46vw;
+    max-width: 220px;
     padding: 8px 10px;
   }
   .help {
     display: none;
   }
   .instruments {
-    left: 14px;
+    left: 50%;
+    transform: translateX(-50%);
     bottom: 10px;
     padding: 6px;
     gap: 8px;
+    pointer-events: none; /* read-only; never block the sticks */
   }
   .horizon {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
   }
 }
