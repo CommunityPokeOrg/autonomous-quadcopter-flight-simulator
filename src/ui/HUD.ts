@@ -191,11 +191,11 @@ export class HUD {
     ctx.rotate(-roll);
     const pitchPx = (pitch * RAD2DEG) * 1.6;
     ctx.translate(0, pitchPx);
-    ctx.fillStyle = '#10364a';
+    ctx.fillStyle = '#2e2e2e';
     ctx.fillRect(-w, -h * 2, w * 2, h * 2); // sky
-    ctx.fillStyle = '#241a10';
+    ctx.fillStyle = '#0f0f0f';
     ctx.fillRect(-w, 0, w * 2, h * 2); // ground
-    ctx.strokeStyle = '#1adfd8';
+    ctx.strokeStyle = '#e8e8e8';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-w, 0);
@@ -203,7 +203,7 @@ export class HUD {
     ctx.stroke();
     ctx.restore();
     // fixed aircraft symbol
-    ctx.strokeStyle = '#ffe14d';
+    ctx.strokeStyle = '#f0f0f0';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cx - 18, cy);

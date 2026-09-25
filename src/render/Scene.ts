@@ -33,8 +33,8 @@ export class Renderer3D {
     this.renderer.setSize(innerWidth, innerHeight);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x05070c);
-    this.scene.fog = new THREE.Fog(0x05070c, 40, 120);
+    this.scene.background = new THREE.Color(0x060606);
+    this.scene.fog = new THREE.Fog(0x060606, 40, 120);
 
     this.camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.05, 400);
     this.camera.position.set(7, -9, 6);
@@ -46,7 +46,7 @@ export class Renderer3D {
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.target.set(0, 0, 1.5);
 
-    const grid = new THREE.GridHelper(60, 60, 0x1adfd8, 0x1a2530);
+    const grid = new THREE.GridHelper(60, 60, 0x8a8a8a, 0x2a2a2a);
     grid.rotation.x = Math.PI / 2; // GridHelper is XZ by default; rotate to XY (z-up)
     (grid.material as THREE.Material).transparent = true;
     (grid.material as THREE.Material).opacity = 0.55;
@@ -77,7 +77,7 @@ export class Renderer3D {
     // ground shadow marker
     this.shadowRing = new THREE.Mesh(
       new THREE.RingGeometry(0.22, 0.3, 32),
-      new THREE.MeshBasicMaterial({ color: 0x1adfd8, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: 0x9a9a9a, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
     );
     this.shadowRing.rotation.x = -Math.PI / 2;
     this.shadowRing.position.z = 0.012;
@@ -88,7 +88,7 @@ export class Renderer3D {
 
   private buildDrone(): void {
     const arm = 0.25;
-    const mat = new THREE.LineBasicMaterial({ color: 0xe8f6ff });
+    const mat = new THREE.LineBasicMaterial({ color: 0xe8e8e8 });
     const pts: THREE.Vector3[] = [];
     // X arms
     const a = arm * Math.SQRT1_2;
@@ -107,18 +107,18 @@ export class Renderer3D {
     // body box
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(0.14, 0.14, 0.05),
-      new THREE.MeshBasicMaterial({ color: 0x0c1a24 }),
+      new THREE.MeshBasicMaterial({ color: 0x141414 }),
     );
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(body.geometry),
-      new THREE.LineBasicMaterial({ color: 0x9be8ff }),
+      new THREE.LineBasicMaterial({ color: 0xd0d0d0 }),
     );
     this.drone.add(body, edges);
 
     // rotor rings + discs, color-coded by spin
     for (let i = 0; i < 4; i++) {
       const off = ROTOR_POSITIONS[i]!;
-      const color = ROTOR_SPIN[i]! > 0 ? 0x1adfd8 : 0xff7a59; // CCW cyan, CW orange
+      const color = ROTOR_SPIN[i]! > 0 ? 0xe0e0e0 : 0x6e6e6e; // CCW light, CW dark
       const ringGeom = new THREE.EdgesGeometry(new THREE.CircleGeometry(0.11, 24));
       const ring = new THREE.LineSegments(ringGeom, new THREE.LineBasicMaterial({ color }));
       ring.position.set(off.x, off.y, 0.02);
@@ -137,7 +137,7 @@ export class Renderer3D {
     // nose indicator (forward +x)
     const nose = new THREE.Mesh(
       new THREE.ConeGeometry(0.03, 0.08, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffe14d }),
+      new THREE.MeshBasicMaterial({ color: 0xf2f2f2 }),
     );
     nose.rotation.z = -Math.PI / 2;
     nose.position.set(0.12, 0, 0.03);
@@ -157,7 +157,7 @@ export class Renderer3D {
     for (const wp of wps) {
       const marker = new THREE.LineSegments(
         new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.22)),
-        new THREE.LineBasicMaterial({ color: 0x557a8a }),
+        new THREE.LineBasicMaterial({ color: 0x7a7a7a }),
       );
       marker.position.set(wp.x, wp.y, wp.z);
       this.waypointGroup.add(marker);
@@ -168,7 +168,7 @@ export class Renderer3D {
       const geom = new THREE.BufferGeometry().setFromPoints(pathPts);
       this.pathLine = new THREE.Line(
         geom,
-        new THREE.LineDashedMaterial({ color: 0x2d6a75, dashSize: 0.35, gapSize: 0.2 }),
+        new THREE.LineDashedMaterial({ color: 0x4a4a4a, dashSize: 0.35, gapSize: 0.2 }),
       );
       this.pathLine.computeLineDistances();
       this.waypointGroup.add(this.pathLine);
@@ -182,14 +182,14 @@ export class Renderer3D {
       const s = m as THREE.LineSegments;
       const mat = s.material as THREE.LineBasicMaterial;
       if (i === active) {
-        mat.color.setHex(0x1adfd8);
+        mat.color.setHex(0xf0f0f0);
         const pulse = 1 + 0.25 * Math.sin(t * 5);
         s.scale.setScalar(pulse);
       } else if (i < nav.index || nav.done) {
-        mat.color.setHex(0x2a3d46);
+        mat.color.setHex(0x3a3a3a);
         s.scale.setScalar(0.8);
       } else {
-        mat.color.setHex(0x557a8a);
+        mat.color.setHex(0x7a7a7a);
         s.scale.setScalar(1);
       }
     });
@@ -204,7 +204,8 @@ export class Renderer3D {
       const s = traj[i]!;
       pos.setXYZ(i, s.x, s.y, s.z);
       const f = n > 1 ? i / (n - 1) : 1; // older = dimmer
-      col.setXYZ(i, 0.05 + 0.12 * f, 0.55 * f + 0.1, 0.6 * f + 0.12);
+      const g = 0.08 + 0.62 * f;
+      col.setXYZ(i, g, g, g);
     }
     pos.needsUpdate = true;
     col.needsUpdate = true;

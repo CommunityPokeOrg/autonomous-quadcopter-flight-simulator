@@ -1,9 +1,9 @@
 :root {
-  --cyan: #1adfd8;
-  --cyan-dim: rgba(26, 223, 216, 0.35);
-  --panel-bg: rgba(8, 14, 22, 0.72);
-  --text: #cfe9ef;
-  --text-dim: #7d99a4;
+  --accent: #e8e8e8;
+  --accent-dim: rgba(232, 232, 232, 0.3);
+  --panel-bg: rgba(10, 10, 10, 0.72);
+  --text: #e0e0e0;
+  --text-dim: #8a8a8a;
   font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Courier New', monospace;
 }
 
@@ -17,7 +17,7 @@ body,
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #05070c;
+  background: #060606;
   color: var(--text);
   font-size: 12px;
 }
@@ -45,20 +45,20 @@ body {
 .panel {
   position: absolute;
   background: var(--panel-bg);
-  border: 1px solid var(--cyan-dim);
+  border: 1px solid var(--accent-dim);
   border-radius: 8px;
   padding: 10px 12px;
   backdrop-filter: blur(8px);
-  box-shadow: 0 0 18px rgba(26, 223, 216, 0.12), inset 0 0 24px rgba(26, 223, 216, 0.04);
+  box-shadow: 0 0 18px rgba(232, 232, 232, 0.1), inset 0 0 24px rgba(232, 232, 232, 0.04);
   pointer-events: auto;
 }
 
 .panel-title {
   font-size: 10px;
   letter-spacing: 0.18em;
-  color: var(--cyan);
+  color: var(--accent);
   margin-bottom: 8px;
-  text-shadow: 0 0 8px rgba(26, 223, 216, 0.6);
+  text-shadow: 0 0 8px rgba(232, 232, 232, 0.5);
 }
 
 .telemetry {
@@ -99,7 +99,7 @@ body {
 
 .value.big {
   font-size: 18px;
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .motors {
@@ -130,8 +130,8 @@ body {
 
 .bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #0e6a67, var(--cyan));
-  box-shadow: 0 0 6px var(--cyan);
+  background: linear-gradient(90deg, #4a4a4a, var(--accent));
+  box-shadow: 0 0 6px var(--accent);
   transition: width 80ms linear;
 }
 
@@ -143,9 +143,9 @@ body {
 }
 
 .btn {
-  background: rgba(26, 223, 216, 0.08);
+  background: rgba(232, 232, 232, 0.08);
   color: var(--text);
-  border: 1px solid var(--cyan-dim);
+  border: 1px solid var(--accent-dim);
   border-radius: 5px;
   padding: 5px 14px;
   font: inherit;
@@ -154,19 +154,19 @@ body {
 }
 
 .btn:hover {
-  background: rgba(26, 223, 216, 0.2);
-  box-shadow: 0 0 10px rgba(26, 223, 216, 0.35);
+  background: rgba(232, 232, 232, 0.18);
+  box-shadow: 0 0 10px rgba(232, 232, 232, 0.3);
 }
 
 .btn.primary {
-  border-color: var(--cyan);
-  color: var(--cyan);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .sel {
-  background: #0a1620;
+  background: #141414;
   color: var(--text);
-  border: 1px solid var(--cyan-dim);
+  border: 1px solid var(--accent-dim);
   border-radius: 4px;
   padding: 3px 6px;
   font: inherit;
@@ -174,7 +174,7 @@ body {
 
 .slider {
   flex: 1;
-  accent-color: var(--cyan);
+  accent-color: var(--accent);
 }
 
 .chk {
@@ -185,21 +185,21 @@ body {
 }
 
 .chk input {
-  accent-color: var(--cyan);
+  accent-color: var(--accent);
 }
 
 .help {
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px dashed rgba(26, 223, 216, 0.25);
+  border-top: 1px dashed rgba(232, 232, 232, 0.25);
   color: var(--text-dim);
   line-height: 1.7;
 }
 
 .horizon {
   border-radius: 50%;
-  border: 1px solid var(--cyan-dim);
-  background: #0a1218;
+  border: 1px solid var(--accent-dim);
+  background: #101010;
 }
 
 .heading {
@@ -236,10 +236,10 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid var(--cyan-dim);
+  border: 1px solid var(--accent-dim);
   background: var(--panel-bg);
   backdrop-filter: blur(6px);
-  box-shadow: 0 0 18px rgba(26, 223, 216, 0.12), inset 0 0 24px rgba(26, 223, 216, 0.06);
+  box-shadow: 0 0 18px rgba(232, 232, 232, 0.1), inset 0 0 24px rgba(232, 232, 232, 0.06);
   pointer-events: auto;
   touch-action: none; /* prevent scroll/zoom while dragging */
   user-select: none;
@@ -255,9 +255,9 @@ body {
   height: 42%;
   margin: -21% 0 0 -21%;
   border-radius: 50%;
-  background: rgba(26, 223, 216, 0.16);
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 12px rgba(26, 223, 216, 0.45);
+  background: rgba(232, 232, 232, 0.16);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 12px rgba(232, 232, 232, 0.4);
   pointer-events: none;
 }
 
