@@ -21,9 +21,12 @@ and autonomous waypoint navigation — built with Three.js and cannon-es.
   discs, trajectory trail, waypoint markers, dashed mission path, ground shadow,
   orbit and chase cameras.
 - **Selectable airframes**: `src/sim/drones.ts` defines complete vehicle presets
-  (physics, controller tuning, mission). Ships with the baseline **QUAD X250**
-  and **RECON R320**, a lighter, efficient recon/survey drone that flies a
-  high-altitude perimeter sweep. Switch via the DRONE selector.
+  (physics, controller tuning, mission, livery). Ships with the baseline
+  **QUAD X250** and **RECON R320**, a lighter, efficient recon/survey drone that
+  flies a high-altitude perimeter sweep and gets its own look — twin-boom
+  H-frame, sensor-pod fuselage with a chin camera gimbal, whip antennas, and a
+  spinning scanner puck in a cyan/amber survey livery. Switch via the DRONE
+  selector.
 
 ## Controls
 
