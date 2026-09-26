@@ -2,8 +2,9 @@ import { AttitudeController } from './AttitudeController';
 import { PositionController } from './PositionController';
 import { WaypointNavigator } from './WaypointNavigator';
 import type { QuadcopterModel } from '../sim/QuadcopterModel';
-import { GRAVITY, MASS_KG } from './constants';
-import { HOVER_OMEGA } from '../sim/QuadcopterModel';
+import type { DroneConfig } from '../sim/drones';
+import { DRONE_PRESETS, DEFAULT_DRONE_ID } from '../sim/drones';
+import { GRAVITY } from './constants';
 import { PID } from './PID';
 
 export type FlightMode = 'autonomous' | 'manual';
@@ -15,18 +16,26 @@ export interface ManualInput {
   throttle: number; // -1..1 (R/F or Shift/Ctrl)
 }
 
-const MANUAL_TILT = (25 * Math.PI) / 180;
-const MANUAL_YAW_RATE = 1.6; // rad/s at full stick
-const MANUAL_CLIMB = 2.5; // m/s at full throttle stick
-
 export class FlightController {
+  readonly cfg: DroneConfig;
   mode: FlightMode = 'autonomous';
-  readonly navigator = new WaypointNavigator();
-  private attitude = new AttitudeController();
-  private position = new PositionController();
-  private manualAltPID = new PID({ kp: 4.0, ki: 0.6, kd: 2.4 }, 6, 2);
+  readonly navigator: WaypointNavigator;
+  private attitude: AttitudeController;
+  private position: PositionController;
+  private manualAltPID: PID;
+  private manualTilt: number;
   private manualHoldZ = 1;
   private manualHadInput = false;
+
+  constructor(cfg: DroneConfig = DRONE_PRESETS[DEFAULT_DRONE_ID]!) {
+    this.cfg = cfg;
+    this.navigator = new WaypointNavigator(cfg.mission);
+    this.attitude = new AttitudeController(cfg);
+    this.position = new PositionController(cfg);
+    const ma = cfg.control.manualAlt;
+    this.manualAltPID = new PID(ma.gains, ma.out, ma.int);
+    this.manualTilt = (cfg.control.manualTiltDeg * Math.PI) / 180;
+  }
 
   update(model: QuadcopterModel, input: ManualInput, dt: number): void {
     const s = model.state;
@@ -87,21 +96,21 @@ export class FlightController {
       let thrust: number;
       if (Math.abs(input.throttle) > 0.05) {
         const az = this.manualAltPID.update(
-          vz + input.throttle * MANUAL_CLIMB,
+          vz + input.throttle * this.cfg.control.manualClimb,
           vz,
           dt,
         );
-        thrust = (MASS_KG * (GRAVITY + az)) / Math.max(0.3, Math.cos(s.euler.roll) * Math.cos(s.euler.pitch));
+        thrust = (this.cfg.mass * (GRAVITY + az)) / Math.max(0.3, Math.cos(s.euler.roll) * Math.cos(s.euler.pitch));
       } else {
         const az = this.manualAltPID.update(this.manualHoldZ, s.position.z, dt);
-        thrust = (MASS_KG * (GRAVITY + az)) / Math.max(0.3, Math.cos(s.euler.roll) * Math.cos(s.euler.pitch));
+        thrust = (this.cfg.mass * (GRAVITY + az)) / Math.max(0.3, Math.cos(s.euler.roll) * Math.cos(s.euler.pitch));
       }
 
       const cmds = this.attitude.update(
         {
-          roll: input.roll * MANUAL_TILT,
-          pitch: input.pitch * MANUAL_TILT,
-          yawRate: input.yawRate * MANUAL_YAW_RATE,
+          roll: input.roll * this.manualTilt,
+          pitch: input.pitch * this.manualTilt,
+          yawRate: input.yawRate * this.cfg.control.manualYawRate,
           thrust,
         },
         meas,
@@ -134,7 +143,7 @@ export class FlightController {
   }
 
   hoverOmega(): number {
-    return HOVER_OMEGA;
+    return Math.sqrt((this.cfg.mass * GRAVITY) / (4 * this.cfg.kT));
   }
 
   reset(): void {

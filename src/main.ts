@@ -51,6 +51,11 @@ const hud = new HUD(hudRoot, sim, {
   onCameraChange: (chase) => renderer.setChase(chase),
   onSpeedChange: (v) => (sim.speed = v),
   onLoopChange: (loop) => (sim.controller.navigator.loop = loop),
+  onDroneChange: (id) => {
+    sim.setDrone(id);
+    renderer.syncDrone();
+    renderer.syncWaypoints();
+  },
 });
 
 // expose for headless testing

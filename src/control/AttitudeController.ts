@@ -1,5 +1,5 @@
 import { PID } from './PID';
-import { KT_HELP, KQ_HELP } from './constants';
+import type { DroneConfig } from '../sim/drones';
 
 export interface AttitudeSetpoint {
   roll: number; // rad
@@ -28,9 +28,18 @@ export interface AttitudeMeasurement {
  * yaw torque (+yaw = CCW): reaction torque = -spin*kQ*w^2, so to yaw CCW increase CW rotors (1,3)
  */
 export class AttitudeController {
-  private rollPID = new PID({ kp: 5.5, ki: 0.8, kd: 1.6 }, 6, 2);
-  private pitchPID = new PID({ kp: 5.5, ki: 0.8, kd: 1.6 }, 6, 2);
-  private yawRatePID = new PID({ kp: 0.7, ki: 0.15, kd: 0.05 }, 1.5, 0.8);
+  private rollPID: PID;
+  private pitchPID: PID;
+  private yawRatePID: PID;
+  private readonly cfg: DroneConfig;
+
+  constructor(cfg: DroneConfig) {
+    this.cfg = cfg;
+    const { attitude, yawRate } = cfg.control;
+    this.rollPID = new PID(attitude.gains, attitude.out, attitude.int);
+    this.pitchPID = new PID(attitude.gains, attitude.out, attitude.int);
+    this.yawRatePID = new PID(yawRate.gains, yawRate.out, yawRate.int);
+  }
 
   update(sp: AttitudeSetpoint, m: AttitudeMeasurement, dt: number): number[] {
     const tauX = this.rollPID.update(sp.roll, m.roll, dt);
@@ -47,10 +56,10 @@ export class AttitudeController {
    * Invert the linear system in "w^2" space, then sqrt.
    */
   private mixer(thrust: number, tauX: number, tauY: number, tauZ: number): number[] {
-    // Per-rotor w^2 contributions. Arm components all equal a = ARM/sqrt(2).
-    const a = KT_HELP.arm / Math.SQRT2;
-    const kT = KT_HELP.kT;
-    const kQ = KQ_HELP.kQ;
+    // Per-rotor w^2 contributions. Arm components all equal a = arm/sqrt(2).
+    const a = this.cfg.arm / Math.SQRT2;
+    const kT = this.cfg.kT;
+    const kQ = this.cfg.kQ;
 
     // tau_x = a * kT * (w0^2 + w3^2 - w1^2 - w2^2)   (left minus right)
     // tau_y = a * kT * (w2^2 + w3^2 - w0^2 - w1^2)   (rear minus front)

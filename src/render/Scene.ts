@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Simulation } from '../sim/Simulation';
-import { ROTOR_POSITIONS, ROTOR_SPIN, MOTOR_OMEGA_MAX } from '../sim/QuadcopterModel';
 
 const TRAJ_MAX_VERTS = 2000;
 
@@ -86,8 +85,24 @@ export class Renderer3D {
     window.addEventListener('resize', () => this.onResize());
   }
 
+  /** Rebuild the drone mesh from the active airframe config. */
+  syncDrone(): void {
+    for (const child of [...this.drone.children]) {
+      this.drone.remove(child);
+      const c = child as THREE.Mesh;
+      (c.geometry as THREE.BufferGeometry | undefined)?.dispose();
+      const m = c.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(m)) m.forEach((x) => x.dispose());
+      else m?.dispose();
+    }
+    this.rotorDiscs = [];
+    this.rotorRings = [];
+    this.buildDrone();
+  }
+
   private buildDrone(): void {
-    const arm = 0.25;
+    const cfg = this.sim.model.config;
+    const arm = cfg.arm;
     const mat = new THREE.LineBasicMaterial({ color: 0xe8e8e8 });
     const pts: THREE.Vector3[] = [];
     // X arms
@@ -104,9 +119,10 @@ export class Renderer3D {
     const armGeom = new THREE.BufferGeometry().setFromPoints(pts);
     this.drone.add(new THREE.LineSegments(armGeom, mat));
 
-    // body box
+    // body box (visual box slightly inset from the collision half extents)
+    const [hx, hy, hz] = cfg.bodyHalfExtents;
     const body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.14, 0.14, 0.05),
+      new THREE.BoxGeometry(hx! * 1.6, hy! * 1.6, hz! * 1.6),
       new THREE.MeshBasicMaterial({ color: 0x141414 }),
     );
     const edges = new THREE.LineSegments(
@@ -116,17 +132,18 @@ export class Renderer3D {
     this.drone.add(body, edges);
 
     // rotor rings + discs, color-coded by spin
+    const model = this.sim.model;
     for (let i = 0; i < 4; i++) {
-      const off = ROTOR_POSITIONS[i]!;
-      const color = ROTOR_SPIN[i]! > 0 ? 0xe0e0e0 : 0x6e6e6e; // CCW light, CW dark
-      const ringGeom = new THREE.EdgesGeometry(new THREE.CircleGeometry(0.11, 24));
+      const off = model.rotorPositions[i]!;
+      const color = model.rotorSpin[i]! > 0 ? 0xe0e0e0 : 0x6e6e6e; // CCW light, CW dark
+      const ringGeom = new THREE.EdgesGeometry(new THREE.CircleGeometry(cfg.rotorRadius, 24));
       const ring = new THREE.LineSegments(ringGeom, new THREE.LineBasicMaterial({ color }));
       ring.position.set(off.x, off.y, 0.02);
       this.drone.add(ring);
       this.rotorRings.push(ring);
 
       const disc = new THREE.Mesh(
-        new THREE.CircleGeometry(0.11, 24),
+        new THREE.CircleGeometry(cfg.rotorRadius, 24),
         new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.0, side: THREE.DoubleSide }),
       );
       disc.position.set(off.x, off.y, 0.018);
@@ -219,14 +236,15 @@ export class Renderer3D {
     this.drone.quaternion.set(st.quaternion.x, st.quaternion.y, st.quaternion.z, st.quaternion.w);
 
     // spin rotors proportional to omega
+    const omegaMax = this.sim.model.config.omegaMax;
     for (let i = 0; i < 4; i++) {
       const w = st.motorOmegas[i] ?? 0;
       const disc = this.rotorDiscs[i]!;
       const ring = this.rotorRings[i]!;
-      ring.rotation.z += w * dt * ROTOR_SPIN[i]!;
+      ring.rotation.z += w * dt * this.sim.model.rotorSpin[i]!;
       (disc.material as THREE.MeshBasicMaterial).opacity = Math.min(
         0.35,
-        (w / MOTOR_OMEGA_MAX) * 0.45,
+        (w / omegaMax) * 0.45,
       );
     }
 

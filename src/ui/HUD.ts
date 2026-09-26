@@ -1,5 +1,5 @@
 import type { Simulation } from '../sim/Simulation';
-import { MOTOR_OMEGA_MAX } from '../sim/QuadcopterModel';
+import { DRONE_PRESETS } from '../sim/drones';
 import type { FlightMode } from '../control/FlightController';
 
 export interface HUDCallbacks {
@@ -9,6 +9,7 @@ export interface HUDCallbacks {
   onCameraChange(chase: boolean): void;
   onSpeedChange(speed: number): void;
   onLoopChange(loop: boolean): void;
+  onDroneChange(id: string): void;
 }
 
 const RAD2DEG = 180 / Math.PI;
@@ -50,6 +51,7 @@ export class HUD {
       ['rates', 'RATES'],
       ['thrust', 'THRUST'],
       ['mode', 'MODE'],
+      ['drone', 'DRONE'],
       ['wp', 'WAYPOINT'],
       ['dist', 'DIST'],
       ['state', 'STATE'],
@@ -76,6 +78,18 @@ export class HUD {
     this.startBtn.onclick = () => this.cb.onStartPause();
     const resetBtn = this.el('button', 'btn', btnRow, 'Reset') as HTMLButtonElement;
     resetBtn.onclick = () => this.cb.onReset();
+
+    const droneRow = this.el('div', 'btn-row', ctrl);
+    this.el('span', 'label', droneRow, 'DRONE');
+    const droneSel = this.el('select', 'sel', droneRow) as HTMLSelectElement;
+    for (const cfg of Object.values(DRONE_PRESETS)) {
+      const o = document.createElement('option');
+      o.value = cfg.id;
+      o.textContent = cfg.label;
+      droneSel.appendChild(o);
+    }
+    droneSel.value = this.sim.droneConfig.id;
+    droneSel.onchange = () => this.cb.onDroneChange(droneSel.value);
 
     const modeRow = this.el('div', 'btn-row', ctrl);
     this.el('span', 'label', modeRow, 'MODE');
@@ -152,6 +166,7 @@ export class HUD {
       `${s.angularVelocity.x.toFixed(2)} ${(-s.angularVelocity.y).toFixed(2)} ${s.angularVelocity.z.toFixed(2)}`;
     e['thrust']!.textContent = `${s.totalThrust.toFixed(1)} N`;
     e['mode']!.textContent = this.sim.mode.toUpperCase();
+    e['drone']!.textContent = this.sim.droneConfig.label;
     const wp = nav.current;
     e['wp']!.textContent = nav.done
       ? 'MISSION COMPLETE'
@@ -162,10 +177,11 @@ export class HUD {
       : 'PAUSED';
     this.startBtn.textContent = this.sim.running ? 'Pause' : 'Start';
 
+    const omegaMax = this.sim.droneConfig.omegaMax;
     for (let i = 0; i < 4; i++) {
       const w = s.motorOmegas[i] ?? 0;
       const f = this.motorBars[i]!;
-      f.style.width = `${Math.min(100, (w / MOTOR_OMEGA_MAX) * 100).toFixed(0)}%`;
+      f.style.width = `${Math.min(100, (w / omegaMax) * 100).toFixed(0)}%`;
     }
 
     // round first, then wrap so 359.6° displays as 0° rather than "360°"
