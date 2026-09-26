@@ -12,6 +12,25 @@ export interface PIDSpec {
 }
 
 /**
+ * Purely cosmetic appearance for an airframe: which silhouette the renderer
+ * builds plus its livery colors (hex RGB). No effect on physics.
+ */
+export interface DroneVisual {
+  /** frame builder to use in the scene */
+  style: 'quad' | 'recon';
+  /** arm/boom wire color */
+  frame: number;
+  /** body shell fill color */
+  body: number;
+  /** edges, nose, and detail accent color */
+  accent: number;
+  /** rotor ring tint for CCW rotors */
+  rotorCCW: number;
+  /** rotor ring tint for CW rotors */
+  rotorCW: number;
+}
+
+/**
  * Complete description of a flyable airframe: rigid-body physics,
  * cascaded-controller tuning, and the mission it flies in autonomous mode.
  */
@@ -40,6 +59,8 @@ export interface DroneConfig {
   bodyHalfExtents: [number, number, number];
   /** prop disc radius for rendering, m */
   rotorRadius: number;
+  /** rendering-only appearance */
+  visual: DroneVisual;
   control: {
     /** roll & pitch angle loops (torque out, N·m) */
     attitude: PIDSpec;
@@ -78,6 +99,14 @@ export const QUAD_X250: DroneConfig = {
   angDrag: 0.012,
   bodyHalfExtents: [0.09, 0.09, 0.03],
   rotorRadius: 0.11,
+  visual: {
+    style: 'quad',
+    frame: 0xe8e8e8,
+    body: 0x141414,
+    accent: 0xd0d0d0,
+    rotorCCW: 0xe0e0e0,
+    rotorCW: 0x6e6e6e,
+  },
   control: {
     attitude: { gains: { kp: 5.5, ki: 0.8, kd: 1.6 }, out: 6, int: 2 },
     yawRate: { gains: { kp: 0.7, ki: 0.15, kd: 0.05 }, out: 1.5, int: 0.8 },
@@ -112,6 +141,15 @@ export const RECON_R320: DroneConfig = {
   angDrag: 0.018,
   bodyHalfExtents: [0.075, 0.075, 0.035],
   rotorRadius: 0.14,
+  // survey livery: cyan airframe, dark slate fuselage, amber sensor accents
+  visual: {
+    style: 'recon',
+    frame: 0x3ec6d8,
+    body: 0x101d24,
+    accent: 0xff9a1f,
+    rotorCCW: 0xcfeff5,
+    rotorCW: 0x2a6b78,
+  },
   control: {
     attitude: { gains: { kp: 5.0, ki: 0.7, kd: 1.5 }, out: 6, int: 2 },
     yawRate: { gains: { kp: 0.7, ki: 0.15, kd: 0.05 }, out: 1.5, int: 0.8 },
