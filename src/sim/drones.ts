@@ -66,6 +66,8 @@ export interface DroneConfig {
     attitude: PIDSpec;
     /** yaw rate loop (torque out, N·m) */
     yawRate: PIDSpec;
+    /** autonomous yaw tracking: bearing-error gain -> yaw-rate setpoint (rad/s) */
+    yawTrack: { kp: number; maxRate: number };
     /** horizontal position loops (accel out, m/s²) */
     posXY: PIDSpec;
     /** vertical position loop (accel out, m/s²) */
@@ -110,6 +112,7 @@ export const QUAD_X250: DroneConfig = {
   control: {
     attitude: { gains: { kp: 5.5, ki: 0.8, kd: 1.6 }, out: 6, int: 2 },
     yawRate: { gains: { kp: 0.7, ki: 0.15, kd: 0.05 }, out: 1.5, int: 0.8 },
+    yawTrack: { kp: 1.4, maxRate: 1.0 },
     posXY: { gains: { kp: 1.6, ki: 0.25, kd: 1.9 }, out: 8, int: 2 },
     posZ: { gains: { kp: 4.0, ki: 0.6, kd: 2.6 }, out: 8, int: 2 },
     manualAlt: { gains: { kp: 4.0, ki: 0.6, kd: 2.4 }, out: 6, int: 2 },
@@ -153,6 +156,7 @@ export const RECON_R320: DroneConfig = {
   control: {
     attitude: { gains: { kp: 5.0, ki: 0.7, kd: 1.5 }, out: 6, int: 2 },
     yawRate: { gains: { kp: 0.7, ki: 0.15, kd: 0.05 }, out: 1.5, int: 0.8 },
+    yawTrack: { kp: 1.1, maxRate: 0.7 },
     posXY: { gains: { kp: 1.6, ki: 0.25, kd: 1.9 }, out: 8, int: 2 },
     posZ: { gains: { kp: 4.0, ki: 0.6, kd: 2.6 }, out: 8, int: 2 },
     manualAlt: { gains: { kp: 4.0, ki: 0.6, kd: 2.4 }, out: 6, int: 2 },

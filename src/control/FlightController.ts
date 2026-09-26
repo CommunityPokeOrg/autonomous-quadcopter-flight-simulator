@@ -1,10 +1,10 @@
 import { AttitudeController } from './AttitudeController';
 import { PositionController } from './PositionController';
-import { WaypointNavigator } from './WaypointNavigator';
+import { WaypointNavigator, type Waypoint } from './WaypointNavigator';
 import type { QuadcopterModel } from '../sim/QuadcopterModel';
 import type { DroneConfig } from '../sim/drones';
 import { DRONE_PRESETS, DEFAULT_DRONE_ID } from '../sim/drones';
-import { GRAVITY } from './constants';
+import { GRAVITY, wrapAngle } from './constants';
 import { PID } from './PID';
 
 export type FlightMode = 'autonomous' | 'manual';
@@ -75,7 +75,12 @@ export class FlightController {
           dt,
         );
         const cmds = this.attitude.update(
-          { roll: demand.roll, pitch: demand.pitch, yawRate: this.yawRateTo(wp, s), thrust: demand.thrust },
+          {
+            roll: demand.roll,
+            pitch: demand.pitch,
+            yawRate: this.yawRateTo(wp, s),
+            thrust: demand.thrust,
+          },
           meas,
           dt,
         );
@@ -120,18 +125,44 @@ export class FlightController {
     }
   }
 
-  /** Gentle yaw hold: command yaw rate proportional to wrapped heading error to nearest waypoint direction is distracting; hold initial heading. */
+  /** Yaw target the tracker is currently steering to (rad). */
   private yawTarget = 0;
   private yawInit = false;
-  private yawRateTo(_wp: unknown, s: { euler: { yaw: number } }): number {
+  /** Waypoint index whose heading is latched for the terminal approach (-1 = tracking). */
+  private yawHoldIdx = -1;
+
+  /**
+   * Point the nose at the active waypoint: yaw-rate setpoint proportional to
+   * the wrapped bearing error, clamped to the airframe's tracking rate.
+   *
+   * Within ~1 m of the waypoint the bearing is hypersensitive to position
+   * jitter (the drone can sit almost directly over the target), so the
+   * approach heading is latched for the rest of that leg — tracking resumes
+   * on the next waypoint, or if the drone drifts back out beyond 2 m.
+   * This keeps takeoff/dwell/landing headings stable too.
+   */
+  private yawRateTo(
+    wp: Waypoint,
+    s: { position: { x: number; y: number }; euler: { yaw: number } },
+  ): number {
     if (!this.yawInit) {
       this.yawTarget = s.euler.yaw;
       this.yawInit = true;
     }
-    let e = this.yawTarget - s.euler.yaw;
-    while (e > Math.PI) e -= 2 * Math.PI;
-    while (e < -Math.PI) e += 2 * Math.PI;
-    return Math.max(-0.8, Math.min(0.8, e * 1.2));
+    const dxy = Math.hypot(wp.x - s.position.x, wp.y - s.position.y);
+    const idx = this.navigator.index;
+    if (this.yawHoldIdx !== idx) {
+      if (dxy < 1.0) {
+        this.yawHoldIdx = idx;
+      } else {
+        this.yawTarget = Math.atan2(wp.y - s.position.y, wp.x - s.position.x);
+      }
+    } else if (dxy > 2.0) {
+      this.yawHoldIdx = -1; // drifted out of the terminal cone — resume tracking
+    }
+    const e = wrapAngle(this.yawTarget - s.euler.yaw);
+    const { kp, maxRate } = this.cfg.control.yawTrack;
+    return Math.max(-maxRate, Math.min(maxRate, e * kp));
   }
 
   setMode(mode: FlightMode): void {
@@ -140,6 +171,8 @@ export class FlightController {
     this.attitude.reset();
     this.position.reset();
     this.manualAltPID.reset();
+    this.yawInit = false;
+    this.yawHoldIdx = -1;
   }
 
   hoverOmega(): number {
@@ -154,5 +187,6 @@ export class FlightController {
     this.manualHadInput = false;
     this.manualHoldZ = 1;
     this.yawInit = false;
+    this.yawHoldIdx = -1;
   }
 }

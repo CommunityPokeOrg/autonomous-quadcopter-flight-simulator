@@ -12,8 +12,10 @@ and autonomous waypoint navigation — built with Three.js and cannon-es.
 - **Cascaded PID flight controller**: position loop → attitude loop → X-config
   motor mixer, with motor saturation and tilt compensation.
 - **Autonomous missions**: waypoint navigation with acceptance radius and dwell
-  time; default mission takes off, flies a 6-waypoint 3-D circuit, returns home
-  and lands. Optional mission looping.
+  time; the nose yaws onto the bearing of the active waypoint (heading latches
+  on final approach) while the position loop flies the leg. Default mission
+  takes off, flies a 6-waypoint 3-D circuit, returns home and lands. Optional
+  mission looping.
 - **Manual mode**: keyboard flying with attitude stabilization and altitude hold.
 - **Live HUD**: telemetry, per-motor thrust bars, artificial horizon, heading
   readout, start/pause/reset, camera and speed controls.
@@ -113,3 +115,6 @@ slipping through less drag (0.16) at the cost of a softer tilt envelope (24°).
 - `scripts/sim-check.ts` (`npx tsx scripts/sim-check.ts`) runs every preset's
   mission headlessly and verifies the drone reaches every waypoint and lands;
   pass preset ids to check a subset.
+- `scripts/yaw-check.ts` (`npx tsx scripts/yaw-check.ts`) verifies yaw tracking:
+  angle wraparound, heading convergence on a synthetic ±π-crossing mission,
+  and bounded total rotation on each preset mission.
