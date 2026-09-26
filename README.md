@@ -20,6 +20,10 @@ and autonomous waypoint navigation — built with Three.js and cannon-es.
 - **3-D visualization**: wireframe quad with color-coded CW/CCW rotors, spin-blur
   discs, trajectory trail, waypoint markers, dashed mission path, ground shadow,
   orbit and chase cameras.
+- **Selectable airframes**: `src/sim/drones.ts` defines complete vehicle presets
+  (physics, controller tuning, mission). Ships with the baseline **QUAD X250**
+  and **RECON R320**, a lighter, efficient recon/survey drone that flies a
+  high-altitude perimeter sweep. Switch via the DRONE selector.
 
 ## Controls
 
@@ -29,6 +33,7 @@ and autonomous waypoint navigation — built with Three.js and cannon-es.
 | Manual (touch) | Twin virtual sticks on touch devices: left stick throttle (up/down) + yaw (left/right), right stick pitch (up/down) + roll (left/right). Both are analog and spring-return to center (centered throttle = altitude hold). |
 | Camera | Orbit: drag to rotate, scroll to zoom. Toggle Orbit/Chase in the panel. |
 | Sim | Start / Pause / Reset buttons; speed slider 0.25×–2×; Loop mission checkbox. |
+| Airframe | DRONE selector swaps vehicle preset (physics, tuning, mission) and resets the sim. |
 
 ## Run locally
 
@@ -52,6 +57,7 @@ deploys it to GitHub Pages. The Vite `base` is set to
 src/
 ├── main.ts                       bootstrap + rAF loop, fixed-timestep physics (1/240 s)
 ├── sim/
+│   ├── drones.ts                 airframe presets: physics, PID tuning, mission
 │   ├── QuadcopterModel.ts        cannon-es body, 4 rotors, thrust/drag model
 │   └── Simulation.ts             world, ground plane, stepping, trajectory buffer
 ├── control/
@@ -80,19 +86,27 @@ waypoints → WaypointNavigator → PositionController (PID)
 
 ### Physics model
 
-- Mass 1.2 kg, arm length 0.25 m, box inertia.
-- Rotor thrust `kT·ω²` (kT = 8e-6), yaw reaction `kQ·ω²` (kQ = 1.4e-7),
-  alternating CW/CCW spin directions, motor lag τ ≈ 20 ms, ω ∈ [0, 1100] rad/s.
-- Gravity −9.81 m/s² on +z-up world; linear drag 0.25 N/(m/s), angular drag 0.012.
+All airframe parameters live in `src/sim/drones.ts` as `DroneConfig` presets.
+The baseline QUAD X250: mass 1.2 kg, arm 0.25 m, `kT = 8e-6`, `kQ = 1.4e-7`,
+motor lag τ ≈ 20 ms, ω ∈ [0, 1100] rad/s, linear drag 0.25 N/(m/s), angular
+drag 0.012. The RECON R320 is lighter (0.65 kg) with longer arms (0.32 m) and
+larger, slower, more efficient props (`kT = 1.6e-5`, ω ∈ [0, 640] rad/s),
+slipping through less drag (0.16) at the cost of a softer tilt envelope (24°).
+
+- Rotor thrust `kT·ω²`, yaw reaction `kQ·ω²`, alternating CW/CCW spin
+  directions, first-order motor lag.
+- Gravity −9.81 m/s² on +z-up world.
 - Fixed timestep 1/240 s with an accumulator; frame dt clamped to 0.1 s so
   background tabs can't explode the sim.
 
 ## Tuning notes
 
-- Attitude angle PIDs: kp≈5.5, ki≈0.8, kd≈1.6 (torque-limited to ±6 N·m).
-- Position PIDs: horizontal kp≈1.6/kd≈1.9, vertical kp≈4.0/kd≈2.6 (accel out).
-- Tilt is clamped to 30° and thrust is tilt-compensated:
+- Per-airframe PID gains live in each preset's `control` block. QUAD X250
+  attitude: kp≈5.5, ki≈0.8, kd≈1.6 (torque-limited to ±6 N·m); position:
+  horizontal kp≈1.6/kd≈1.9, vertical kp≈4.0/kd≈2.6 (accel out).
+- Tilt is clamped per airframe (`maxTiltDeg`) and thrust is tilt-compensated:
   `T = m(g + a_z)/(cos φ cos θ)`.
 - Waypoint acceptance radius 0.4 m, dwell 1 s.
-- `scripts/sim-check.ts` (`npx tsx scripts/sim-check.ts`) runs the full mission
-  headlessly and verifies the drone reaches every waypoint and lands.
+- `scripts/sim-check.ts` (`npx tsx scripts/sim-check.ts`) runs every preset's
+  mission headlessly and verifies the drone reaches every waypoint and lands;
+  pass preset ids to check a subset.

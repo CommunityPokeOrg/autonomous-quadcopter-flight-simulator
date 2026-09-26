@@ -20,11 +20,15 @@ const ACCEPT_RADIUS = 0.4;
 const DWELL_TIME = 1.0;
 
 export class WaypointNavigator {
-  waypoints: Waypoint[] = DEFAULT_MISSION.map((w) => ({ ...w }));
+  waypoints: Waypoint[];
   loop = false;
   index = 0;
   private dwellTimer = 0;
   done = false;
+
+  constructor(mission: Waypoint[] = DEFAULT_MISSION) {
+    this.waypoints = mission.map((w) => ({ ...w }));
+  }
 
   get current(): Waypoint | null {
     if (this.done) return this.waypoints[this.waypoints.length - 1] ?? null;

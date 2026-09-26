@@ -1,5 +1,6 @@
 import { PID } from './PID';
-import { GRAVITY, MASS_KG } from './constants';
+import { GRAVITY } from './constants';
+import type { DroneConfig } from '../sim/drones';
 
 export interface PositionSetpoint {
   x: number;
@@ -25,17 +26,25 @@ export interface AttitudeDemand {
   thrust: number; // N
 }
 
-const MAX_TILT = (30 * Math.PI) / 180;
-const MAX_SPEED = 6; // m/s soft speed cap via velocity feedforward
-
 /**
  * Outer loop: desired position -> desired roll/pitch (in the body-yaw frame)
  * plus collective thrust with gravity and tilt compensation.
  */
 export class PositionController {
-  private xPID = new PID({ kp: 1.6, ki: 0.25, kd: 1.9 }, 8, 2);
-  private yPID = new PID({ kp: 1.6, ki: 0.25, kd: 1.9 }, 8, 2);
-  private zPID = new PID({ kp: 4.0, ki: 0.6, kd: 2.6 }, 8, 2);
+  private xPID: PID;
+  private yPID: PID;
+  private zPID: PID;
+  private readonly cfg: DroneConfig;
+  private readonly maxTilt: number;
+
+  constructor(cfg: DroneConfig) {
+    this.cfg = cfg;
+    const { posXY, posZ, maxTiltDeg } = cfg.control;
+    this.xPID = new PID(posXY.gains, posXY.out, posXY.int);
+    this.yPID = new PID(posXY.gains, posXY.out, posXY.int);
+    this.zPID = new PID(posZ.gains, posZ.out, posZ.int);
+    this.maxTilt = (maxTiltDeg * Math.PI) / 180;
+  }
 
   update(sp: PositionSetpoint, m: PositionMeasurement, dt: number): AttitudeDemand {
     // horizontal PIDs output desired accelerations (m/s^2)
@@ -53,15 +62,15 @@ export class PositionController {
     let pitch = -aFwd / GRAVITY;
     let roll = -aLat / GRAVITY;
     const tilt = Math.hypot(roll, pitch);
-    if (tilt > MAX_TILT) {
-      const s = MAX_TILT / tilt;
+    if (tilt > this.maxTilt) {
+      const s = this.maxTilt / tilt;
       roll *= s;
       pitch *= s;
     }
 
     // collective thrust: m(g+az) / (cos roll * cos pitch)
     const cosTilt = Math.cos(roll) * Math.cos(pitch);
-    const thrust = (MASS_KG * (GRAVITY + azW)) / Math.max(0.3, cosTilt);
+    const thrust = (this.cfg.mass * (GRAVITY + azW)) / Math.max(0.3, cosTilt);
 
     return { roll, pitch, thrust };
   }
@@ -72,5 +81,3 @@ export class PositionController {
     this.zPID.reset();
   }
 }
-
-export { MAX_TILT, MAX_SPEED };
